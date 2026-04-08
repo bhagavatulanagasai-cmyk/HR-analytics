@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predictive HR Analytics | Attrition Insights</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <aside>
+        <div class="logo">HR.INTEL</div>
+        <nav>
+            <ul>
+                <li class="active">Overview</li>
+                <li>Employee Risk</li>
+                <li>Retention Tools</li>
+                <li>Reports</li>
+                <li>Settings</li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main>
+        <header>
+            <h1>Organizational Health</h1>
+            <div class="user-profile">
+                <span style="color: var(--text-secondary)">HR Manager: <strong>Alex Chen</strong></span>
+                <div class="avatar"></div>
+            </div>
+        </header>
+
+        <section class="grid">
+            <div class="card animate-fade">
+                <p class="stat-label">Total Retention Rate</p>
+                <p class="stat-value">84.2%</p>
+                <p class="stat-trend trend-down">↓ 2.1% from last quarter</p>
+            </div>
+            <div class="card animate-fade" style="animation-delay: 0.1s">
+                <p class="stat-label">High-Risk Employees</p>
+                <p class="stat-value" style="color: var(--danger)">42</p>
+                <p class="stat-trend trend-up">↑ 12 since last month</p>
+            </div>
+            <div class="card animate-fade" style="animation-delay: 0.2s">
+                <p class="stat-label">Est. Replacement Savings</p>
+                <p class="stat-value" style="color: var(--success)">$284K</p>
+                <p class="stat-trend">Based on intervention success</p>
+            </div>
+        </section>
+
+        <section class="card animate-fade" style="animation-delay: 0.3s">
+            <h2 class="section-title">Critical Turnover Alerts</h2>
+            <div id="risk-list">
+                <!-- Rows will be injected by JS -->
+            </div>
+        </section>
+    </main>
+
+    <script src="main.js"></script>
+</body>
+</html>

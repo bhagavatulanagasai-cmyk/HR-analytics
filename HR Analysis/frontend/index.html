@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR.INTEL | AI Attrition Platform</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & Babel -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: white; }
+        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .avatar-gradient { background: linear-gradient(45deg, #7c4dff, #00e5ff); }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const App = () => {
+            const [view, setView] = useState('dashboard'); // dashboard | add | detail
+            const [employees, setEmployees] = useState([]);
+            const [selectedEmp, setSelectedEmp] = useState(null);
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                fetchEmployees();
+            }, []);
+
+            const fetchEmployees = async () => {
+                setLoading(true);
+                try {
+                    const res = await fetch('/api/employees');
+                    const data = await res.json();
+                    setEmployees(data);
+                } catch (e) { console.error(e); }
+                setLoading(false);
+            };
+
+            const navigateToDetail = (emp) => {
+                setSelectedEmp(emp);
+                setView('detail');
+            };
+
+            return (
+                <div className="min-h-screen flex flex-col md:flex-row">
+                    {/* Sidebar */}
+                    <aside className="w-full md:w-64 glass p-8">
+                        <div className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400 mb-12">
+                            HR.INTEL
+                        </div>
+                        <nav className="space-y-4">
+                            <button onClick={() => setView('dashboard')} className={`w-full text-left p-3 rounded-lg transition-colors ${view === 'dashboard' ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white'}`}>Dashboard</button>
+                            <button onClick={() => setView('add')} className={`w-full text-left p-3 rounded-lg transition-colors ${view === 'add' ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white'}`}>Add Employee</button>
+                        </nav>
+                    </aside>
+
+                    {/* Content */}
+                    <main className="flex-1 p-8 overflow-y-auto">
+                        {loading ? (
+                            <div className="flex items-center justify-center h-full text-slate-400">Loading Organizational Data...</div>
+                        ) : (
+                            <>
+                                {view === 'dashboard' && <Dashboard employees={employees} onSelect={navigateToDetail} />}
+                                {view === 'add' && <AddEmployeeForm onComplete={() => { fetchEmployees(); setView('dashboard'); }} />}
+                                {view === 'detail' && <EmployeeDetail employee={selectedEmp} onBack={() => setView('dashboard')} />}
+                            </>
+                        )}
+                    </main>
+                </div>
+            );
+        };
+
+        const Dashboard = ({ employees, onSelect }) => {
+            const highRiskCount = employees.filter(e => e.risk_category === 'High').length;
+
+            return (
+                <div className="animate-in fade-in duration-500">
+                    <header className="flex justify-between items-center mb-8">
+                        <h1 className="text-3xl font-bold">Organizational Overview</h1>
+                        <div className="flex gap-4">
+                            <StatCard label="Total Staff" value={employees.length} color="indigo" />
+                            <StatCard label="At Risk" value={highRiskCount} color="rose" />
+                        </div>
+                    </header>
+
+                    <div className="grid grid-cols-1 gap-4">
+                        <div className="glass rounded-2xl overflow-hidden">
+                            <table className="w-full text-left">
+                                <thead className="bg-white/5 text-slate-400 uppercase text-xs">
+                                    <tr>
+                                        <th className="p-4">Employee</th>
+                                        <th className="p-4">Department</th>
+                                        <th className="p-4">Risk Level</th>
+                                        <th className="p-4">Score</th>
+                                        <th className="p-4">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {employees.map(emp => (
+                                        <tr key={emp.id} className="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer" onClick={() => onSelect(emp)}>
+                                            <td className="p-4 font-semibold">{emp.name}</td>
+                                            <td className="p-4 text-slate-400">{emp.department}</td>
+                                            <td className="p-4">
+                                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                                    emp.risk_category === 'High' ? 'bg-rose-500/20 text-rose-400' :
+                                                    emp.risk_category === 'Medium' ? 'bg-amber-500/20 text-amber-400' : 'bg-emerald-500/20 text-emerald-400'
+                                                }`}>
+                                                    {emp.risk_category}
+                                                </span>
+                                            </td>
+                                            <td className="p-4 text-slate-300">{(emp.risk_score * 100).toFixed(1)}%</td>
+                                            <td className="p-4">
+                                                <button className="text-indigo-400 hover:text-indigo-300 text-sm">Analyze →</button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const EmployeeDetail = ({ employee, onBack }) => {
+            return (
+                <div className="animate-in slide-in-from-right duration-300">
+                    <button onClick={onBack} className="text-slate-400 hover:text-white mb-6">← Back to Dashboard</button>
+                    <div className="flex flex-col lg:flex-row gap-8">
+                        {/* Profile Card */}
+                        <div className="flex-1 space-y-8">
+                            <div className="glass p-8 rounded-3xl flex items-center gap-6">
+                                <div className="w-20 h-20 rounded-full avatar-gradient flex items-center justify-center text-2xl font-bold">
+                                    {employee.name[0]}
+                                </div>
+                                <div>
+                                    <h2 className="text-4xl font-bold">{employee.name}</h2>
+                                    <p className="text-slate-400">{employee.department} • {employee.tenure} Years Experience</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <DetailStat label="Monthly Salary" value={`$${employee.monthly_income.toLocaleString()}`} />
+                                <DetailStat label="Engagement Score" value={`${employee.last_rating}/5 Rating`} />
+                            </div>
+                        </div>
+
+                        {/* Analysis Panel */}
+                        <div className="lg:w-96 space-y-6">
+                            <div className="glass p-8 rounded-3xl border-rose-500/30">
+                                <h3 className="text-xl font-bold mb-4">Risk Probability</h3>
+                                <div className="text-6xl font-black text-rose-500">
+                                    {(employee.risk_score * 100).toFixed(0)}%
+                                </div>
+                                <p className="text-slate-400 mt-2">Predicted vulnerability scale based on behavior patterns.</p>
+                            </div>
+
+                            <div className="glass p-8 rounded-3xl">
+                                <h3 className="text-xl font-bold mb-4">Retention Strategy</h3>
+                                <div className="space-y-4">
+                                    {employee.insights.map((insight, idx) => (
+                                        <div key={idx} className="flex gap-4">
+                                            <div className="mt-1 w-2 h-2 rounded-full bg-cyan-400 shrink-0" />
+                                            <div>
+                                                <p className="text-xs text-slate-500 uppercase font-bold">{insight.factor}</p>
+                                                <p className="text-slate-300">{insight.action}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const AddEmployeeForm = ({ onComplete }) => {
+            const [formData, setFormData] = useState({
+                name: '', department: 'Engineering', tenure: 2, monthly_income: 5000,
+                last_rating: 4, engagement_score: 3.5, distance_from_home: 15, overtime: 0
+            });
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                const res = await fetch('/api/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                if (res.ok) onComplete();
+            };
+
+            return (
+                <div className="max-w-2xl mx-auto glass p-10 rounded-3xl">
+                    <h2 className="text-3xl font-bold mb-8">Onboard New Talent Analysis</h2>
+                    <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="col-span-2">
+                            <label className="block text-slate-400 text-sm mb-2">Full Name</label>
+                            <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-white/5 border border-white/10 p-3 rounded-lg focus:outline-none focus:border-indigo-500" required />
+                        </div>
+                        <div>
+                            <label className="block text-slate-400 text-sm mb-2">Department</label>
+                            <select value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} className="w-full bg-white/5 border border-white/10 p-3 rounded-lg">
+                                <option className="bg-slate-900">Engineering</option>
+                                <option className="bg-slate-900">Sales</option>
+                                <option className="bg-slate-900">Product</option>
+                                <option className="bg-slate-900">HR</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-slate-400 text-sm mb-2">Monthly Income ($)</label>
+                            <input type="number" value={formData.monthly_income} onChange={e => setFormData({...formData, monthly_income: Number(e.target.value)})} className="w-full bg-white/5 border border-white/10 p-3 rounded-lg" />
+                        </div>
+                        <div>
+                            <label className="block text-slate-400 text-sm mb-2">Engagement (1-5)</label>
+                            <input type="number" step="0.1" value={formData.engagement_score} onChange={e => setFormData({...formData, engagement_score: Number(e.target.value)})} className="w-full bg-white/5 border border-white/10 p-3 rounded-lg" />
+                        </div>
+                        <div>
+                            <label className="block text-slate-400 text-sm mb-2">Overtime Status</label>
+                            <select value={formData.overtime} onChange={e => setFormData({...formData, overtime: Number(e.target.value)})} className="w-full bg-white/5 border border-white/10 p-3 rounded-lg">
+                                <option value="0" className="bg-slate-900">No Overtime</option>
+                                <option value="1" className="bg-slate-900">Frequent Overtime</option>
+                            </select>
+                        </div>
+                        <div className="col-span-2 pt-4">
+                            <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 p-4 rounded-xl font-bold transition-transform active:scale-95">Analyze Attrition Risk</button>
+                        </div>
+                    </form>
+                </div>
+            );
+        };
+
+        const StatCard = ({ label, value, color }) => (
+            <div className={`p-4 rounded-2xl border border-white/10 bg-${color}-500/5`}>
+                <p className="text-xs text-slate-400 font-bold uppercase">{label}</p>
+                <p className={`text-2xl font-black text-${color}-400`}>{value}</p>
+            </div>
+        );
+
+        const DetailStat = ({ label, value }) => (
+            <div className="glass p-4 rounded-2xl">
+                <p className="text-slate-400 text-sm">{label}</p>
+                <p className="text-xl font-bold">{value}</p>
+            </div>
+        );
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
